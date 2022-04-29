@@ -1,12 +1,20 @@
 ﻿using UnityEngine;
+using EventMessages;
 
 namespace LifeModel
 {
     /// <summary>
-    /// A board model, contains cells with two states, dead or alive.
+    /// A representation of the board that contains the cells. Currently designed for 2D.
     /// </summary>
-    public class GameBoard<T> where T : Cell, new()
+    /// <typeparam name="T">The type to be held by the board.</typeparam>
+    /// <typeparam name="CellType">The cell type.</typeparam>
+    public class GameBoard<T, CellType> where T : Cell<CellType>, new()
     {
+
+        /// <summary>
+        /// An event instance fired whenever there is something happening on a cell.
+        /// </summary>
+        private ParameterizedAction<Vector3> cellEvent;
 
         /// <summary>
         /// Contains the bounding values for this grid.
@@ -32,14 +40,17 @@ namespace LifeModel
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="width">Required width for the bounding value on X-axis.</param>
-        /// <param name="height">Required height for the bounding value on Y-axis.</param>
+        /// <param name="cellEvent">Required event which will be fired whenever there is something happening on the cell.</param>
+        /// <param name="bounds">Require size of the grid.</param>
         /// <param name="origin">Optional origin, to adjust the placement of the board itself.</param>
         /// <param name="cellSize">Optional cell size, to adjust the size of individual cells.</param>
-        public GameBoard(int width, int height, Vector3 origin = default(Vector3), float cellSize = 1f)
+        /// 
+        public GameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, Vector3 origin = default(Vector3), float cellSize = 1f)
         {
-            Bounds = new Vector2Int(width, height);
-            board = new T[width, height];
+            Bounds = bounds;
+            board = new T[Bounds.x, Bounds.y];
+
+            this.cellEvent = cellEvent;
             this.origin = origin;
             this.cellSize = cellSize <= 0 ? 1f : cellSize;
 
@@ -56,8 +67,12 @@ namespace LifeModel
                     obj.BoardPosition = new Vector2Int(x, y);
                     obj.WorldPosition = GetWorldPosition(x, y);
                     board[x, y] = obj;
+
+                    cellEvent?.Raise(obj.WorldPosition);
                 }
             }
+
+            //cellEvent?.Raise(new Vector3(
         }
 
         /// <summary>
@@ -68,11 +83,11 @@ namespace LifeModel
         /// <param name="x">X-coordinate.</param>
         /// <param name="y">Y-coordinate.</param>
         /// <param name="value">The value to be set.</param>
-        public void SetValue(int x, int y, T value)
+        public void SetValue(int x, int y, CellType value)
         {
             if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return;
 
-            board[x, y] = value;
+            board[x, y].Value = value;
         }
 
         /// <summary>
@@ -81,7 +96,7 @@ namespace LifeModel
         /// </summary>
         /// <param name="worldPosition">A vector 3 noting the world position.</param>
         /// <param name="value">The value to be set.</param>
-        public void SetValue(Vector3 worldPosition, T value)
+        public void SetValue(Vector3 worldPosition, CellType value)
         {
             Vector2Int boardPosition = GetBoardPosition(worldPosition);
             SetValue(boardPosition.x, boardPosition.y, value);
@@ -94,11 +109,11 @@ namespace LifeModel
         /// <param name="x">X-coordinate.</param>
         /// <param name="y">Y-coordinate.</param>
         /// <returns>Returns the value found on board[x][y], or the default if the coordinates are invalid.</returns>
-        public T GetValue(int x, int y)
+        public CellType GetValue(int x, int y)
         {
-            if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return default(T);
+            if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return default(CellType);
 
-            return board[x, y];
+            return board[x, y].Value;
         }
 
         /// <summary>
@@ -107,7 +122,7 @@ namespace LifeModel
         /// </summary>
         /// <param name="worldPosition">A vector 3 noting the world position.</param>
         /// <returns>The value on the cell referred by the world position, or the default if the coordinates are invalid.</returns>
-        public T GetValue(Vector3 worldPosition)
+        public CellType GetValue(Vector3 worldPosition)
         {
             Vector2Int coord = GetBoardPosition(worldPosition);
             return GetValue(coord.x, coord.y);

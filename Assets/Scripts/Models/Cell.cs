@@ -7,7 +7,7 @@ namespace LifeModel
     /// Requires all implementing cells to have position,
     /// both world and board-relative.
     /// </summary>
-    public abstract class Cell
+    public abstract class Cell<T>
     {
         /// <summary>
         /// Represents the position on the board.
@@ -18,6 +18,8 @@ namespace LifeModel
         /// Represents the world position.
         /// </summary>
         public Vector3 WorldPosition { get; set; }
+
+        public abstract T Value { get; set; }
 
         /*
         public Cell(Vector2Int boardPosition, Vector3 worldPosition)
