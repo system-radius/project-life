@@ -81,7 +81,7 @@ namespace LifeModel
         /// <param name="x">X-coordinate.</param>
         /// <param name="y">Y-coordinate.</param>
         /// <param name="value">The value to be set.</param>
-        public void SetValue(int x, int y, CellType value)
+        public virtual void SetValue(int x, int y, CellType value)
         {
             if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return;
 
@@ -110,7 +110,7 @@ namespace LifeModel
         /// <param name="x">X-coordinate.</param>
         /// <param name="y">Y-coordinate.</param>
         /// <returns>Returns the value found on board[x][y], or the default if the coordinates are invalid.</returns>
-        public CellType GetValue(int x, int y)
+        public virtual CellType GetValue(int x, int y)
         {
             if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return default(CellType);
 
@@ -152,6 +152,22 @@ namespace LifeModel
             int y = Mathf.RoundToInt((worldPosition - origin).y / cellSize);
 
             return new Vector2Int(x, y);
+        }
+
+        /// <summary>
+        /// A utility method for retrieving the grid values and saving them
+        /// into another container.
+        /// </summary>
+        /// <param name="container">Another 2D array that will contain the current grid values.</param>
+        public void RetrieveCurrentGridValues(CellType[,] container)
+        {
+            for (int x = 0; x < Bounds.x; x++)
+            {
+                for (int y = 0; y < Bounds.y; y++)
+                {
+                    container[x, y] = GetValue(x, y);
+                }
+            }
         }
     }
 

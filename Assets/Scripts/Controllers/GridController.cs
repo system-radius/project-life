@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using EventMessages;
@@ -51,7 +52,11 @@ namespace LifeController
         /// A reference to the grid being manipulated. It contains LifeCell objects,
         /// and returns/requires bool for getting and setting values, respectively.
         /// </summary>
-        private GameBoard<LifeCell, bool> grid;
+        private LifeGameBoard grid;
+
+        private bool[,] container;
+
+        private Coroutine activeCoroutine = null;
 
         /// <summary>
         /// Built-in function, used to register methods to events.
@@ -80,11 +85,14 @@ namespace LifeController
         /// </summary>
         private void Restart()
         {
+            if (activeCoroutine != null) StopCoroutine(activeCoroutine);
+
             Vector2Int size = sizeData.value;
             Vector3 origin = originData.value;
-            grid = new GameBoard<LifeCell, bool>(cellEvent, size, origin);
+            grid = new LifeGameBoard(cellEvent, size, origin);
+            container = new bool[size.x, size.y];
 
-            RandomizeBoard();
+            grid.Randomize();
 
             // Re-center the camera.
             int halfSizeX = size.x / 2;
@@ -92,19 +100,17 @@ namespace LifeController
             Vector3 center = grid.GetWorldPosition(halfSizeX, halfSizeY) - (Vector3.one * 0.5f);
             center.z = size.x > size.y ? halfSizeY : halfSizeX;
             moveCamera?.Raise(center);
+
+            // Start the coroutine.
+            activeCoroutine = StartCoroutine(CheckGeneration());
         }
 
-        /// <summary>
-        /// Randomizes the board.
-        /// </summary>
-        private void RandomizeBoard()
+        private IEnumerator CheckGeneration()
         {
-            for (int x = 0; x < grid.Bounds.x; x++)
+            while (true)
             {
-                for (int y = 0; y < grid.Bounds.y; y++)
-                {
-                    grid.SetValue(x, y, Random.Range(0, 2) % 2 == 0);
-                }
+                grid.UpdateGeneration(container);
+                yield return new WaitForSecondsRealtime(updateTime.value);
             }
         }
 
