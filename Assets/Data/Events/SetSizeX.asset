@@ -9,7 +9,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d532d34612ff4f48a24951017a5f4bb, type: 3}
-  m_Name: UpdateTimeInSeconds
+  m_Script: {fileID: 11500000, guid: 3ba3c6444134a7745b1305b368b9aff3, type: 3}
+  m_Name: SetSizeX
   m_EditorClassIdentifier: 
-  value: 0.1

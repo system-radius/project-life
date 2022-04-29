@@ -9,14 +9,20 @@ namespace LifeView
 
         [SerializeField] private Vector3Action cellEvent;
 
+        [SerializeField] private Vector3Action setColorData;
+
+        private Color aliveColor;
+
         private void OnEnable()
         {
             cellEvent.listeners += ReceiveCellEvent;
+            setColorData.listeners += SetColor;
         }
 
         private void OnDisable()
         {
             cellEvent.listeners -= ReceiveCellEvent;
+            setColorData.listeners -= SetColor;
         }
 
         private void ReceiveCellEvent(Vector3 vector)
@@ -28,8 +34,13 @@ namespace LifeView
             }
             else
             {
-                collider.gameObject.GetComponent<SpriteRenderer>().color = vector.z == 0 ? Color.black : Color.white;
+                collider.gameObject.GetComponent<SpriteRenderer>().color = vector.z == 0 ? Color.black : aliveColor;
             }
+        }
+
+        private void SetColor(Vector3 vector)
+        {
+            aliveColor = new Color(vector.x, vector.y, vector.z);
         }
     }
 }

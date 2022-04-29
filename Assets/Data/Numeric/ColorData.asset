@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2d532d34612ff4f48a24951017a5f4bb, type: 3}
-  m_Name: UpdateTimeInSeconds
+  m_Script: {fileID: 11500000, guid: 130d6a6ad0bceff47a50fc9192155539, type: 3}
+  m_Name: ColorData
   m_EditorClassIdentifier: 
-  value: 0.1
+  value: {x: 1, y: 1, z: 1}

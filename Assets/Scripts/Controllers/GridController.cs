@@ -15,21 +15,42 @@ namespace LifeController
     /// </summary>
     public class GridController : MonoBehaviour
     {
-        [Header("Events")]
+        [Header("Fired Events")]
         /// <summary>
         /// An event to be fired whenever there is something happening with the cells.
         /// </summary>
         [SerializeField] private Vector3Action cellEvent = null;
 
         /// <summary>
-        /// An event to be received for changing a cell's value in the grid.
+        /// An event to be fired to broadcast the change in the number of alive cells.
         /// </summary>
-        [SerializeField] private Vector3Action setCellValueEvent = null;
+        [SerializeField] private NumericAction changeLifeValue = null;
+
+        /// <summary>
+        /// An event to be fired to broadcast the change in the generation count.
+        /// </summary>
+        [SerializeField] private NumericAction changeGenerationValue = null;
 
         /// <summary>
         /// An event to set the camera position. Only used to center the camera.
         /// </summary>
         [SerializeField] private Vector3Action moveCamera = null;
+
+        [Header("Received events")]
+        /// <summary>
+        /// An event to be received for changing a cell's value in the grid.
+        /// </summary>
+        [SerializeField] private Vector3Action setCellValueEvent = null;
+
+        /// <summary>
+        /// An event to be received for changing the size of the grid with regards to X-axis.
+        /// </summary>
+        [SerializeField] private NumericAction setSizeX = null;
+
+        /// <summary>
+        /// An event to be received for changing the size of the grid with regards to Y-axis.
+        /// </summary>
+        [SerializeField] private NumericAction setSizeY = null;
 
 
         [Header("Data")]
@@ -64,6 +85,8 @@ namespace LifeController
         private void OnEnable()
         {
             setCellValueEvent.listeners += SetCellValue;
+            setSizeX.listeners += SetSizeX;
+            setSizeY.listeners += SetSizeY;
         }
 
         /// <summary>
@@ -92,6 +115,9 @@ namespace LifeController
             grid = new LifeGameBoard(cellEvent, size, origin);
             container = new bool[size.x, size.y];
 
+            setSizeX?.Raise(size.x);
+            setSizeY?.Raise(size.y);
+
             grid.Randomize();
 
             // Re-center the camera.
@@ -110,6 +136,9 @@ namespace LifeController
             while (true)
             {
                 grid.UpdateGeneration(container);
+
+                changeLifeValue?.Raise(grid.AliveCells);
+                changeGenerationValue?.Raise(grid.Generations);
                 yield return new WaitForSecondsRealtime(updateTime.value);
             }
         }
@@ -119,6 +148,16 @@ namespace LifeController
             bool value = vector.z == 1;
             vector.z = 0;
             grid.SetValue(vector, value);
+        }
+
+        private void SetSizeX(float f)
+        {
+            sizeData.value.x = Mathf.FloorToInt(f);
+        }
+
+        private void SetSizeY(float f)
+        {
+            sizeData.value.y = Mathf.FloorToInt(f);
         }
     }
 }

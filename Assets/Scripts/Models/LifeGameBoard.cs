@@ -3,10 +3,21 @@ using UnityEngine;
 
 namespace LifeModel
 {
+    /// <summary>
+    /// A subclass of the game board. Implements additional methods
+    /// necessary for the generation updates for the game of life.
+    /// </summary>
     public class LifeGameBoard : GameBoard<LifeCell, bool>
     {
+
+        public int AliveCells { get; private set; }
+
+        public int Generations { get; private set; }
+
         public LifeGameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, Vector3 origin = default, float cellSize = 1) : base(cellEvent, bounds, origin, cellSize)
         {
+            AliveCells = 0;
+            Generations = 1;
         }
 
         /// <summary>
@@ -18,7 +29,10 @@ namespace LifeModel
             {
                 for (int y = 0; y < Bounds.y; y++)
                 {
-                    SetValue(x, y, Random.Range(0, 2) % 2 == 0);
+                    bool state = Random.Range(0, 2) % 2 == 0;
+                    SetValue(x, y, state);
+
+                    AliveCells += state ? 1 : 0;
                 }
             }
         }
@@ -27,10 +41,13 @@ namespace LifeModel
         /// Updates the entire board to move on to the next generation.
         /// </summary>
         /// <param name="container">An array container to hold the values while updating.</param>
-        public void UpdateGeneration(bool[,] container)
+        public int UpdateGeneration(bool[,] container)
         {
             RetrieveCurrentGridValues(container);
             UpdateCellStates(container);
+            Generations++;
+
+            return Generations;
         }
 
         /// <summary>
@@ -40,12 +57,16 @@ namespace LifeModel
         /// <param name="container">A 2D array that contains a snapshot of the grid values.</param>
         public void UpdateCellStates(bool[,] container)
         {
+            AliveCells = 0;
             for (int x = 0; x < Bounds.x; x++)
             {
                 for (int y = 0; y < Bounds.y; y++)
                 {
                     int n = CountNeighbours(container, x, y);
-                    SetValue(x, y, GetCellState(n, GetValue(x, y)));
+
+                    bool state = GetCellState(n, GetValue(x, y));
+                    AliveCells += state ? 1 : 0;
+                    SetValue(x, y, state);
                 }
             }
         }
