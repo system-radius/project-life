@@ -71,8 +71,6 @@ namespace LifeModel
                     cellEvent?.Raise(obj.WorldPosition);
                 }
             }
-
-            //cellEvent?.Raise(new Vector3(
         }
 
         /// <summary>
@@ -87,7 +85,10 @@ namespace LifeModel
         {
             if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return;
 
-            board[x, y].Value = value;
+            T cell = board[x, y];
+            cell.Value = value;
+            cell.WorldPosition = new Vector3(cell.WorldPosition.x, cell.WorldPosition.y, value.Equals(default(CellType)) ? 0 : 1);
+            cellEvent?.Raise(cell.WorldPosition);
         }
 
         /// <summary>
