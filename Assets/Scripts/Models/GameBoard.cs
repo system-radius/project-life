@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using EventMessages;
 
 namespace LifeModel
 {
@@ -8,13 +7,8 @@ namespace LifeModel
     /// </summary>
     /// <typeparam name="T">The type to be held by the board.</typeparam>
     /// <typeparam name="CellType">The cell type.</typeparam>
-    public class GameBoard<T, CellType> where T : Cell<CellType>, new()
+    public abstract class GameBoard<T, CellType> where T : ICell<CellType>
     {
-
-        /// <summary>
-        /// An event instance fired whenever there is something happening on a cell.
-        /// </summary>
-        private ParameterizedAction<Vector3> cellEvent;
 
         /// <summary>
         /// Contains the bounding values for this grid.
@@ -25,7 +19,7 @@ namespace LifeModel
         /// <summary>
         /// The integer representation of this grid.
         /// </summary>
-        private T[,] board;
+        protected T[,] board;
 
         /// <summary>
         /// The size of one cell in the grid.
@@ -40,42 +34,23 @@ namespace LifeModel
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="cellEvent">Required event which will be fired whenever there is something happening on the cell.</param>
         /// <param name="bounds">Require size of the grid.</param>
         /// <param name="origin">Optional origin, to adjust the placement of the board itself.</param>
         /// <param name="cellSize">Optional cell size, to adjust the size of individual cells.</param>
         /// 
-        public GameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, Vector3 origin = default(Vector3), float cellSize = 1f)
+        public GameBoard(Vector2Int bounds, Vector3 origin = default(Vector3), float cellSize = 1f)
         {
             Bounds = bounds;
             board = new T[Bounds.x, Bounds.y];
 
-            this.cellEvent = cellEvent;
             this.origin = origin;
             this.cellSize = cellSize <= 0 ? 1f : cellSize;
-
-            CreateBoard();
         }
 
         /// <summary>
         /// Create cell instances in the board.
         /// </summary>
-        private void CreateBoard()
-        {
-            for (int x = 0; x < Bounds.x; x++)
-            {
-                for (int y = 0; y < Bounds.y; y++)
-                {
-                    T obj = new T();
-                    obj.BoardPosition = new Vector2Int(x, y);
-                    obj.WorldPosition = GetWorldPosition(x, y);
-                    board[x, y] = obj;
-
-                    // Optionally, an event may be raised on creation of a cell.
-                    cellEvent?.Raise(obj.WorldPosition);
-                }
-            }
-        }
+        public abstract void CreateBoard(bool setValue);
 
         /// <summary>
         /// Set the value of a cell in the board using X and Y integer coordinates.
@@ -91,8 +66,6 @@ namespace LifeModel
 
             T cell = board[x, y];
             cell.Value = value;
-            cell.WorldPosition = new Vector3(cell.WorldPosition.x, cell.WorldPosition.y, value.Equals(default(CellType)) ? 0 : 1);
-            cellEvent?.Raise(cell.WorldPosition);
         }
 
         /// <summary>

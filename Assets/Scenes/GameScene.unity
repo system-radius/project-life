@@ -5771,19 +5771,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   cellEvent: {fileID: 11400000, guid: 7ba374d692fae114e847ba55577b5b14, type: 2}
-  changeLifeValue: {fileID: 11400000, guid: dcc8ff166a7692f40a905067d71b1562, type: 2}
-  changeGenerationValue: {fileID: 11400000, guid: d52ba478f98e7154094acbffd1158b8c,
+  changeLifeValueEvent: {fileID: 11400000, guid: dcc8ff166a7692f40a905067d71b1562,
     type: 2}
-  centerCamera: {fileID: 11400000, guid: c6204b010474b4849ad47a642cf14cfa, type: 2}
+  changeGenerationValueEvent: {fileID: 11400000, guid: d52ba478f98e7154094acbffd1158b8c,
+    type: 2}
+  centerCameraEvent: {fileID: 11400000, guid: c6204b010474b4849ad47a642cf14cfa, type: 2}
+  internalCellEvent: {fileID: 11400000, guid: 37f27fe3c200882428ee87401f2cdcf1, type: 2}
   setCellValueEvent: {fileID: 11400000, guid: bdd0c1f167829fc468b700e9bf48c722, type: 2}
-  setSimulationSpeed: {fileID: 11400000, guid: 034db4d2aa2031d45b6a121750b12199, type: 2}
-  restartBoard: {fileID: 11400000, guid: 40dc7672e01ff9949bff63c2e9ef4776, type: 2}
-  randomizeSimulation: {fileID: 11400000, guid: 6f953b843faf85641818b89eb57925cd,
+  setSimulationSpeedEvent: {fileID: 11400000, guid: 034db4d2aa2031d45b6a121750b12199,
     type: 2}
-  pauseSimulation: {fileID: 11400000, guid: f4f5bec718ee51248a7bdf6915be7f95, type: 2}
-  enableTorus: {fileID: 11400000, guid: 3fef2545f4229814eb33194e28354594, type: 2}
-  forceResetAlive: {fileID: 11400000, guid: 33641878814e1b24e97338d194d2307f, type: 2}
-  forceResetDead: {fileID: 11400000, guid: d210b3ef774d4204994595ea49f4360b, type: 2}
+  restartBoardEvent: {fileID: 11400000, guid: 40dc7672e01ff9949bff63c2e9ef4776, type: 2}
+  randomizeSimulationEvent: {fileID: 11400000, guid: 6f953b843faf85641818b89eb57925cd,
+    type: 2}
+  pauseSimulationEvent: {fileID: 11400000, guid: f4f5bec718ee51248a7bdf6915be7f95,
+    type: 2}
+  enableTorusEvent: {fileID: 11400000, guid: 3fef2545f4229814eb33194e28354594, type: 2}
+  forceResetAliveEvent: {fileID: 11400000, guid: 33641878814e1b24e97338d194d2307f,
+    type: 2}
+  forceResetDeadEvent: {fileID: 11400000, guid: d210b3ef774d4204994595ea49f4360b,
+    type: 2}
   sizeData: {fileID: 11400000, guid: 4eeb61836c32c3d4f8e6ed1f02ff900b, type: 2}
   updateTime: {fileID: 11400000, guid: 0044a7ce5e5e05a4597f1ffa1aaaf4fa, type: 2}
   playingSimulation: {fileID: 11400000, guid: cc15d82bcd5090245b08852b0af4ab3b, type: 2}

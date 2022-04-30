@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using EventMessages;
@@ -16,28 +17,33 @@ namespace LifeController
     {
         [Header("Fired Events")]
         /// <summary>
-        /// An event to be fired whenever there is something happening with the cells.
+        /// An event to be fired whenever there is something heppening with the cells.
         /// </summary>
         [SerializeField] private Vector3Action cellEvent = null;
 
         /// <summary>
         /// An event to be fired to broadcast the change in the number of alive cells.
         /// </summary>
-        [SerializeField] private NumericAction changeLifeValue = null;
+        [SerializeField] private NumericAction changeLifeValueEvent = null;
 
         /// <summary>
         /// An event to be fired to broadcast the change in the generation count.
         /// </summary>
-        [SerializeField] private NumericAction changeGenerationValue = null;
+        [SerializeField] private NumericAction changeGenerationValueEvent = null;
 
         /// <summary>
         /// An event to be fired when attempting to center the camera. 
         /// This also allows for the camera to be moved to the center whenever
         /// the grid is re-created for whatever reason.
         /// </summary>
-        [SerializeField] private ActionEvent centerCamera = null;
+        [SerializeField] private ActionEvent centerCameraEvent = null;
 
         [Header("Received events")]
+        /// <summary>
+        /// An event to be receieved whenever there is something new with the cells.
+        /// </summary>
+        [SerializeField] private Vector3Action internalCellEvent = null;
+
         /// <summary>
         /// An event to be received for changing a cell's value in the grid.
         /// </summary>
@@ -46,39 +52,39 @@ namespace LifeController
         /// <summary>
         /// An event to be received when applying the new simulation speed.
         /// </summary>
-        [SerializeField] private NumericAction setSimulationSpeed = null;
+        [SerializeField] private NumericAction setSimulationSpeedEvent = null;
 
         /// <summary>
         /// An event to be received when applying the new size settings to the board.
         /// </summary>
-        [SerializeField] private ActionEvent restartBoard = null;
+        [SerializeField] private ActionEvent restartBoardEvent = null;
 
         /// <summary>
         /// An event to be received when applying randomization to the board.
         /// </summary>
-        [SerializeField] private ActionEvent randomizeSimulation = null;
+        [SerializeField] private ActionEvent randomizeSimulationEvent = null;
 
         /// <summary>
         /// An event to be received when pausing/playing the simulation.
         /// </summary>
-        [SerializeField] private ActionEvent pauseSimulation = null;
+        [SerializeField] private ActionEvent pauseSimulationEvent = null;
 
         /// <summary>
         /// An event to be received when enabling/disabling the torus capability of the board.
         /// </summary>
-        [SerializeField] private BooleanAction enableTorus = null;
+        [SerializeField] private BooleanAction enableTorusEvent = null;
 
         /// <summary>
         /// An event that may be received when there is a color change.
         /// Forces the cells to "reset" their values.
         /// </summary>
-        [SerializeField] private Vector3Action forceResetAlive = null;
+        [SerializeField] private Vector3Action forceResetAliveEvent = null;
 
         /// <summary>
         /// An event that may be received when there is a color change.
         /// Forces the cells to "reset" their values.
         /// </summary>
-        [SerializeField] private Vector3Action forceResetDead = null;
+        [SerializeField] private Vector3Action forceResetDeadEvent = null;
 
         [Header("Data")]
         /// <summary>
@@ -117,15 +123,17 @@ namespace LifeController
         /// </summary>
         private void OnEnable()
         {
-            setCellValueEvent.listeners += SetCellValue;
-            setSimulationSpeed.listeners += SetSimulationSpeed;
-            restartBoard.listeners += Restart;
-            randomizeSimulation.listeners += RandomizeSimulation;
-            pauseSimulation.listeners += PauseSimulation;
-            enableTorus.listeners += EnableTorus;
 
-            forceResetAlive.listeners += ForceResetValue;
-            forceResetDead.listeners += ForceResetValue;
+            internalCellEvent.listeners += ChangedCellValue;
+            setCellValueEvent.listeners += SetCellValue;
+            setSimulationSpeedEvent.listeners += SetSimulationSpeed;
+            restartBoardEvent.listeners += Restart;
+            randomizeSimulationEvent.listeners += RandomizeSimulation;
+            pauseSimulationEvent.listeners += PauseSimulation;
+            enableTorusEvent.listeners += EnableTorus;
+
+            forceResetAliveEvent.listeners += ForceResetValue;
+            forceResetDeadEvent.listeners += ForceResetValue;
         }
 
         /// <summary>
@@ -133,22 +141,23 @@ namespace LifeController
         /// </summary>
         private void OnDisable()
         {
+            internalCellEvent.listeners -= ChangedCellValue;
             setCellValueEvent.listeners -= SetCellValue;
-            setSimulationSpeed.listeners -= SetSimulationSpeed;
-            restartBoard.listeners -= Restart;
-            randomizeSimulation.listeners -= RandomizeSimulation;
-            pauseSimulation.listeners -= PauseSimulation;
-            enableTorus.listeners -= EnableTorus;
+            setSimulationSpeedEvent.listeners -= SetSimulationSpeed;
+            restartBoardEvent.listeners -= Restart;
+            randomizeSimulationEvent.listeners -= RandomizeSimulation;
+            pauseSimulationEvent.listeners -= PauseSimulation;
+            enableTorusEvent.listeners -= EnableTorus;
 
-            forceResetAlive.listeners -= ForceResetValue;
-            forceResetDead.listeners -= ForceResetValue;
+            forceResetAliveEvent.listeners -= ForceResetValue;
+            forceResetDeadEvent.listeners -= ForceResetValue;
         }
 
         private void Start()
         {
             RandomizeSimulation();
-            setSimulationSpeed?.Raise(updateTime.value);
-            enableTorus?.Raise(boardWrap.value);
+            setSimulationSpeedEvent?.Raise(updateTime.value);
+            enableTorusEvent?.Raise(boardWrap.value);
         }
 
         /// <summary>
@@ -175,26 +184,20 @@ namespace LifeController
         /// <param name="randomize">An optional parameter to randomize the contents.</param>
         private void ResetBoard(bool randomize = false)
         {
-            if (activeCoroutine != null) StopCoroutine(activeCoroutine);
             // When starting a new simulation, pause it first to allow viewing of the initial state.
             playingSimulation.value = false;
 
             Vector2Int size = sizeData.value;
             // Create a new instance of the game board.
-            grid = new LifeGameBoard(cellEvent, size);
+            grid = new LifeGameBoard(internalCellEvent, size, randomize);
 
             // Raise the following events to reset the held values of other concerned objects.
-            changeLifeValue?.Raise(grid.AliveCells);
-            changeGenerationValue?.Raise(grid.Generations);
-
-            // Randomize the grid if applicable.
-            if (randomize) grid.Randomize();
+            changeLifeValueEvent?.Raise(grid.AliveCells);
+            changeGenerationValueEvent?.Raise(grid.Generations);
 
             // Raise the event to attempt move the camera to the center.
-            centerCamera?.Raise();
-
-            // Start the coroutine.
-            activeCoroutine = StartCoroutine(CheckGeneration());
+            centerCameraEvent?.Raise();
+            SetSimulationSpeed(updateTime.value);
         }
 
         /// <summary>
@@ -227,8 +230,8 @@ namespace LifeController
                 {
                     grid.UpdateGeneration(boardWrap.value);
 
-                    changeLifeValue?.Raise(grid.AliveCells);
-                    changeGenerationValue?.Raise(grid.Generations);
+                    changeLifeValueEvent?.Raise(grid.AliveCells);
+                    changeGenerationValueEvent?.Raise(grid.Generations);
                     yield return new WaitForSecondsRealtime(updateTime.value);
                 }
                 yield return null;
@@ -236,7 +239,19 @@ namespace LifeController
         }
 
         /// <summary>
-        /// A method executed when receiving "cellEvents".
+        /// A method executed when receiving "internalCellEvent".
+        /// This simply propagates the events for whichever outside 
+        /// class that would like to receive it.
+        /// </summary>
+        /// <param name="vector">The vector containing the coordinate of the cell, and the value to be set.</param>
+        private void ChangedCellValue(Vector3 vector)
+        {
+            cellEvent?.Raise(vector);
+        }
+
+        /// <summary>
+        /// A method executed when receiving "setCellEvent".
+        /// This allows for setting the cell value that is in the grid.
         /// </summary>
         /// <param name="vector">The vector containing the coordinate of the cell, and the value to be set.</param>
         private void SetCellValue(Vector3 vector)
@@ -252,7 +267,11 @@ namespace LifeController
         /// <param name="f">The new speed parameter.</param>
         private void SetSimulationSpeed(float f)
         {
+            if (activeCoroutine != null) StopCoroutine(activeCoroutine);
             updateTime.value = f;
+
+            // Start the coroutine.
+            activeCoroutine = StartCoroutine(CheckGeneration());
         }
 
         /// <summary>

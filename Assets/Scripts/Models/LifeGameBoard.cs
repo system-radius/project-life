@@ -11,6 +11,11 @@ namespace LifeModel
     {
 
         /// <summary>
+        /// An event instance fired whenever there is something happening on a cell.
+        /// </summary>
+        private ParameterizedAction<Vector3> internalCellEvent = null;
+
+        /// <summary>
         /// A container for the current state of the board so that generation updates
         /// can be done without destroying data.
         /// </summary>
@@ -26,28 +31,56 @@ namespace LifeModel
         /// </summary>
         public int Generations { get; private set; }
 
-        public LifeGameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, Vector3 origin = default, float cellSize = 1) : base(cellEvent, bounds, origin, cellSize)
+        public LifeGameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, bool randomize = false, Vector3 origin = default, float cellSize = 1) : base(bounds, origin, cellSize)
         {
             AliveCells = 0;
             Generations = 1;
             container = new bool[Bounds.x, Bounds.y];
+            internalCellEvent = cellEvent;
+
+            CreateBoard(randomize);
         }
 
         /// <summary>
-        /// Randomizes the board.
+        /// Creates a new board.
         /// </summary>
-        public void Randomize()
+        /// <param name="randomize">Whether to perform randomization on the values or not.</param>
+        public override void CreateBoard(bool randomize)
         {
             for (int x = 0; x < Bounds.x; x++)
             {
                 for (int y = 0; y < Bounds.y; y++)
                 {
-                    bool state = Random.Range(0, 2) % 2 == 0;
+                    LifeCell obj = new LifeCell();
+                    obj.BoardPosition = new Vector2Int(x, y);
+                    obj.WorldPosition = GetWorldPosition(x, y);
+                    board[x, y] = obj;
+
+                    bool state = randomize ? Random.Range(0, 2) % 2 == 0 : false;
                     SetValue(x, y, state);
 
                     AliveCells += state ? 1 : 0;
                 }
             }
+        }
+
+        /// <summary>
+        /// Overrides the SetValue from the game board. This override allows for
+        /// an event to be raised. Said event does not particularly care who or
+        /// what receives it.
+        /// </summary>
+        /// <param name="x">The X-coordinate.</param>
+        /// <param name="y">The Y-coordinate.</param>
+        /// <param name="value">The value to be set.</param>
+        public override void SetValue(int x, int y, bool value)
+        {
+            base.SetValue(x, y, value);
+            if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return;
+
+            LifeCell cell = board[x, y];
+            cell.WorldPosition = new Vector3(cell.WorldPosition.x, cell.WorldPosition.y, cell.Value ? 1 : 0);
+
+            internalCellEvent?.Raise(cell.WorldPosition);
         }
 
         /// <summary>
