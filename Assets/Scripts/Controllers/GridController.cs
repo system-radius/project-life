@@ -64,6 +64,11 @@ namespace LifeController
         [SerializeField] private ActionEvent pauseSimulation = null;
 
         /// <summary>
+        /// An event to be received when enabling/disabling the torus capability of the board.
+        /// </summary>
+        [SerializeField] private BooleanAction enableTorus = null;
+
+        /// <summary>
         /// An event that may be received when there is a color change.
         /// Forces the cells to "reset" their values.
         /// </summary>
@@ -92,6 +97,11 @@ namespace LifeController
         [SerializeField] private BooleanData playingSimulation = null;
 
         /// <summary>
+        /// Whether the grid can wrap around itself when checking for neighbours.
+        /// </summary>
+        [SerializeField] private BooleanData boardWrap = null;
+
+        /// <summary>
         /// A reference to the grid being manipulated. It contains LifeCell objects,
         /// and returns/requires bool for getting and setting values, respectively.
         /// </summary>
@@ -112,6 +122,7 @@ namespace LifeController
             restartBoard.listeners += Restart;
             randomizeSimulation.listeners += RandomizeSimulation;
             pauseSimulation.listeners += PauseSimulation;
+            enableTorus.listeners += EnableTorus;
 
             forceResetAlive.listeners += ForceResetValue;
             forceResetDead.listeners += ForceResetValue;
@@ -127,6 +138,7 @@ namespace LifeController
             restartBoard.listeners -= Restart;
             randomizeSimulation.listeners -= RandomizeSimulation;
             pauseSimulation.listeners -= PauseSimulation;
+            enableTorus.listeners -= EnableTorus;
 
             forceResetAlive.listeners -= ForceResetValue;
             forceResetDead.listeners -= ForceResetValue;
@@ -136,6 +148,7 @@ namespace LifeController
         {
             RandomizeSimulation();
             setSimulationSpeed?.Raise(updateTime.value);
+            enableTorus?.Raise(boardWrap.value);
         }
 
         /// <summary>
@@ -193,6 +206,15 @@ namespace LifeController
         }
 
         /// <summary>
+        /// Called when enabling/disabling the wrap around functionality.
+        /// </summary>
+        /// <param name="state">Whether the board can do a wrap around search for neighbours or otherwise.</param>
+        private void EnableTorus(bool state)
+        {
+            boardWrap.value = state;
+        }
+
+        /// <summary>
         /// The coroutine that runs the generation update on the grid.
         /// Running this helps with the calculation for the wait time without extra variables.
         /// </summary>
@@ -203,7 +225,7 @@ namespace LifeController
             {
                 if (playingSimulation.value)
                 {
-                    grid.UpdateGeneration();
+                    grid.UpdateGeneration(boardWrap.value);
 
                     changeLifeValue?.Raise(grid.AliveCells);
                     changeGenerationValue?.Raise(grid.Generations);

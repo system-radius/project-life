@@ -67,10 +67,11 @@ namespace LifeModel
         /// <summary>
         /// Updates the entire board to move on to the next generation.
         /// </summary>
-        public int UpdateGeneration()
+        /// /// <param name="enableTorus">Whether the board can do a wrap around search for neighbours or otherwise.</param>
+        public int UpdateGeneration(bool enableTorus = false)
         {
             RetrieveCurrentGridValues(container);
-            UpdateCellStates(container);
+            UpdateCellStates(container, enableTorus);
             Generations++;
 
             return Generations;
@@ -81,14 +82,15 @@ namespace LifeModel
         /// from the given container.
         /// </summary>
         /// <param name="container">A 2D array that contains a snapshot of the grid values.</param>
-        public void UpdateCellStates(bool[,] container)
+        /// <param name="enableTorus">Whether the board can do a wrap around search for neighbours or otherwise.</param>
+        public void UpdateCellStates(bool[,] container, bool enableTorus = false)
         {
             AliveCells = 0;
             for (int x = 0; x < Bounds.x; x++)
             {
                 for (int y = 0; y < Bounds.y; y++)
                 {
-                    int n = CountNeighbours(container, x, y);
+                    int n = CountNeighbours(container, x, y, enableTorus);
 
                     bool state = GetCellState(n, GetValue(x, y));
                     AliveCells += state ? 1 : 0;
@@ -104,20 +106,21 @@ namespace LifeModel
         /// <param name="container">A 2D array that contains the states of the cell prior to changes.</param>
         /// <param name="positionX">The X-coordinate of the cell to be checked.</param>
         /// <param name="positionY">The Y-coordinate of the cell to be checked.</param>
+        /// <param name="enableTorus">Whether the board can do a wrap around search for neighbours or otherwise.</param>
         /// <returns>The total number of "alive" neighbours.</returns>
-        public int CountNeighbours(bool[,] container, int positionX, int positionY) 
+        public int CountNeighbours(bool[,] container, int positionX, int positionY, bool enableTorus = false)
         {
             int neighbours = 0;
             for (int x = -1; x <= 1; x++)
             {
 
-                int neighbourX = x + positionX;
+                int neighbourX = enableTorus ? (x + positionX + Bounds.x) % Bounds.x : x + positionX;
                 if (neighbourX < 0 || neighbourX >= Bounds.x)
                     continue; // Skip invalid indices.
 
                 for (int y = -1; y <= 1; y++)
                 {
-                    int neighbourY = y + positionY;
+                    int neighbourY = enableTorus ? (y + positionY + Bounds.y) % Bounds.y : y + positionY;
                     if (neighbourY < 0 || neighbourY >= Bounds.y)
                         continue; // Skip invalid indices.
                     if (x == 0 && y == 0) continue; // Skip self.
