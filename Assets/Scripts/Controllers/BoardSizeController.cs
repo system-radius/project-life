@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using EventMessages;
+using LifeModel;
 
 namespace LifeController
 {
