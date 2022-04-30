@@ -1,6 +1,5 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using EventMessages;
 using LifeModel;
 
@@ -32,9 +31,11 @@ namespace LifeController
         [SerializeField] private NumericAction changeGenerationValue = null;
 
         /// <summary>
-        /// An event to set the camera position. Only used to center the camera.
+        /// An event to be fired when attempting to center the camera. 
+        /// This also allows for the camera to be moved to the center whenever
+        /// the grid is re-created for whatever reason.
         /// </summary>
-        [SerializeField] private Vector3Action moveCamera = null;
+        [SerializeField] private ActionEvent centerCamera = null;
 
         [Header("Received events")]
         /// <summary>
@@ -43,15 +44,36 @@ namespace LifeController
         [SerializeField] private Vector3Action setCellValueEvent = null;
 
         /// <summary>
-        /// An event to be received for changing the size of the grid with regards to X-axis.
+        /// An event to be received when applying the new simulation speed.
         /// </summary>
-        [SerializeField] private NumericAction setSizeX = null;
+        [SerializeField] private NumericAction setSimulationSpeed = null;
 
         /// <summary>
-        /// An event to be received for changing the size of the grid with regards to Y-axis.
+        /// An event to be received when applying the new size settings to the board.
         /// </summary>
-        [SerializeField] private NumericAction setSizeY = null;
+        [SerializeField] private ActionEvent restartBoard = null;
 
+        /// <summary>
+        /// An event to be received when applying randomization to the board.
+        /// </summary>
+        [SerializeField] private ActionEvent randomizeSimulation = null;
+
+        /// <summary>
+        /// An event to be received when pausing/playing the simulation.
+        /// </summary>
+        [SerializeField] private ActionEvent pauseSimulation = null;
+
+        /// <summary>
+        /// An event that may be received when there is a color change.
+        /// Forces the cells to "reset" their values.
+        /// </summary>
+        [SerializeField] private Vector3Action forceResetAlive = null;
+
+        /// <summary>
+        /// An event that may be received when there is a color change.
+        /// Forces the cells to "reset" their values.
+        /// </summary>
+        [SerializeField] private Vector3Action forceResetDead = null;
 
         [Header("Data")]
         /// <summary>
@@ -60,14 +82,14 @@ namespace LifeController
         [SerializeField] private Vector2IntData sizeData = null;
 
         /// <summary>
-        /// The lower-left position of the board to be generated.
-        /// </summary>
-        [SerializeField] private Vector3Data originData = null;
-
-        /// <summary>
         /// The amount of time to pass before performing an update to the grid.
         /// </summary>
         [SerializeField] private NumericData updateTime = null;
+
+        /// <summary>
+        /// Whether playing the simulation or not.
+        /// </summary>
+        [SerializeField] private BooleanData playingSimulation = null;
 
         /// <summary>
         /// A reference to the grid being manipulated. It contains LifeCell objects,
@@ -75,8 +97,9 @@ namespace LifeController
         /// </summary>
         private LifeGameBoard grid;
 
-        private bool[,] container;
-
+        /// <summary>
+        /// A reference to the current coroutine that runs the generation updates.
+        /// </summary>
         private Coroutine activeCoroutine = null;
 
         /// <summary>
@@ -85,8 +108,13 @@ namespace LifeController
         private void OnEnable()
         {
             setCellValueEvent.listeners += SetCellValue;
-            setSizeX.listeners += SetSizeX;
-            setSizeY.listeners += SetSizeY;
+            setSimulationSpeed.listeners += SetSimulationSpeed;
+            restartBoard.listeners += Restart;
+            randomizeSimulation.listeners += RandomizeSimulation;
+            pauseSimulation.listeners += PauseSimulation;
+
+            forceResetAlive.listeners += ForceResetValue;
+            forceResetDead.listeners += ForceResetValue;
         }
 
         /// <summary>
@@ -95,11 +123,19 @@ namespace LifeController
         private void OnDisable()
         {
             setCellValueEvent.listeners -= SetCellValue;
+            setSimulationSpeed.listeners -= SetSimulationSpeed;
+            restartBoard.listeners -= Restart;
+            randomizeSimulation.listeners -= RandomizeSimulation;
+            pauseSimulation.listeners -= PauseSimulation;
+
+            forceResetAlive.listeners -= ForceResetValue;
+            forceResetDead.listeners -= ForceResetValue;
         }
 
         private void Start()
         {
-            Restart();
+            RandomizeSimulation();
+            setSimulationSpeed?.Raise(updateTime.value);
         }
 
         /// <summary>
@@ -108,41 +144,79 @@ namespace LifeController
         /// </summary>
         private void Restart()
         {
+            ResetBoard();
+        }
+
+        /// <summary>
+        /// Called to restart the board and randomize its contents.
+        /// Creates the board from scratch.
+        /// </summary>
+        private void RandomizeSimulation()
+        {
+            ResetBoard(true);
+        }
+
+        /// <summary>
+        /// Reset the board. Building it with the new data for size.
+        /// </summary>
+        /// <param name="randomize">An optional parameter to randomize the contents.</param>
+        private void ResetBoard(bool randomize = false)
+        {
             if (activeCoroutine != null) StopCoroutine(activeCoroutine);
+            // When starting a new simulation, pause it first to allow viewing of the initial state.
+            playingSimulation.value = false;
 
             Vector2Int size = sizeData.value;
-            Vector3 origin = originData.value;
-            grid = new LifeGameBoard(cellEvent, size, origin);
-            container = new bool[size.x, size.y];
+            // Create a new instance of the game board.
+            grid = new LifeGameBoard(cellEvent, size);
 
-            setSizeX?.Raise(size.x);
-            setSizeY?.Raise(size.y);
+            // Raise the following events to reset the held values of other concerned objects.
+            changeLifeValue?.Raise(grid.AliveCells);
+            changeGenerationValue?.Raise(grid.Generations);
 
-            grid.Randomize();
+            // Randomize the grid if applicable.
+            if (randomize) grid.Randomize();
 
-            // Re-center the camera.
-            int halfSizeX = size.x / 2;
-            int halfSizeY = size.y / 2;
-            Vector3 center = grid.GetWorldPosition(halfSizeX, halfSizeY) - (Vector3.one * 0.5f);
-            center.z = size.x > size.y ? halfSizeY : halfSizeX;
-            moveCamera?.Raise(center);
+            // Raise the event to attempt move the camera to the center.
+            centerCamera?.Raise();
 
             // Start the coroutine.
             activeCoroutine = StartCoroutine(CheckGeneration());
         }
 
+        /// <summary>
+        /// Called when pausing/playing the simulation.
+        /// </summary>
+        private void PauseSimulation()
+        {
+            playingSimulation.value = !playingSimulation.value;
+        }
+
+        /// <summary>
+        /// The coroutine that runs the generation update on the grid.
+        /// Running this helps with the calculation for the wait time without extra variables.
+        /// </summary>
+        /// <returns>A reference to the coroutine.</returns>
         private IEnumerator CheckGeneration()
         {
             while (true)
             {
-                grid.UpdateGeneration(container);
+                if (playingSimulation.value)
+                {
+                    grid.UpdateGeneration();
 
-                changeLifeValue?.Raise(grid.AliveCells);
-                changeGenerationValue?.Raise(grid.Generations);
-                yield return new WaitForSecondsRealtime(updateTime.value);
+                    changeLifeValue?.Raise(grid.AliveCells);
+                    changeGenerationValue?.Raise(grid.Generations);
+                    yield return new WaitForSecondsRealtime(updateTime.value);
+                }
+                yield return null;
             }
         }
 
+        /// <summary>
+        /// A method executed when receiving "cellEvents".
+        /// </summary>
+        /// <param name="vector">The vector containing the coordinate of the cell, and the value to be set.</param>
         private void SetCellValue(Vector3 vector)
         {
             bool value = vector.z == 1;
@@ -150,14 +224,23 @@ namespace LifeController
             grid.SetValue(vector, value);
         }
 
-        private void SetSizeX(float f)
+        /// <summary>
+        /// A method executed when receiving "setSimulationSpeed" event.
+        /// </summary>
+        /// <param name="f">The new speed parameter.</param>
+        private void SetSimulationSpeed(float f)
         {
-            sizeData.value.x = Mathf.FloorToInt(f);
+            updateTime.value = f;
         }
 
-        private void SetSizeY(float f)
+        /// <summary>
+        /// Allows for forcibly reseting the values on the cells,
+        /// so that set cell event may be triggered.
+        /// </summary>
+        /// <param name="vector">An unused parameter.</param>
+        private void ForceResetValue(Vector3 vector)
         {
-            sizeData.value.y = Mathf.FloorToInt(f);
+            if (grid != null) grid.SetCellSelfValue();
         }
     }
 }

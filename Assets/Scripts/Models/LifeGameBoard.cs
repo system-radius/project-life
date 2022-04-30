@@ -10,14 +10,27 @@ namespace LifeModel
     public class LifeGameBoard : GameBoard<LifeCell, bool>
     {
 
+        /// <summary>
+        /// A container for the current state of the board so that generation updates
+        /// can be done without destroying data.
+        /// </summary>
+        private bool[,] container;
+
+        /// <summary>
+        /// The number of the cells that are currently alive.
+        /// </summary>
         public int AliveCells { get; private set; }
 
+        /// <summary>
+        /// The number of generations since the beginning of this game board.
+        /// </summary>
         public int Generations { get; private set; }
 
         public LifeGameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, Vector3 origin = default, float cellSize = 1) : base(cellEvent, bounds, origin, cellSize)
         {
             AliveCells = 0;
             Generations = 1;
+            container = new bool[Bounds.x, Bounds.y];
         }
 
         /// <summary>
@@ -38,10 +51,23 @@ namespace LifeModel
         }
 
         /// <summary>
+        /// A method that can force events on set value.
+        /// </summary>
+        public void SetCellSelfValue()
+        {
+            for (int x = 0; x < Bounds.x; x++)
+            {
+                for (int y = 0; y < Bounds.y; y++)
+                {
+                    SetValue(x, y, GetValue(x, y));
+                }
+            }
+        }
+
+        /// <summary>
         /// Updates the entire board to move on to the next generation.
         /// </summary>
-        /// <param name="container">An array container to hold the values while updating.</param>
-        public int UpdateGeneration(bool[,] container)
+        public int UpdateGeneration()
         {
             RetrieveCurrentGridValues(container);
             UpdateCellStates(container);
@@ -71,6 +97,14 @@ namespace LifeModel
             }
         }
 
+        /// <summary>
+        /// Attempt to count the neighbours of the cell identified by a position XY. This is done
+        /// in this model as it requires checking for the bounds.
+        /// </summary>
+        /// <param name="container">A 2D array that contains the states of the cell prior to changes.</param>
+        /// <param name="positionX">The X-coordinate of the cell to be checked.</param>
+        /// <param name="positionY">The Y-coordinate of the cell to be checked.</param>
+        /// <returns>The total number of "alive" neighbours.</returns>
         public int CountNeighbours(bool[,] container, int positionX, int positionY) 
         {
             int neighbours = 0;
@@ -94,6 +128,12 @@ namespace LifeModel
             return neighbours;
         }
 
+        /// <summary>
+        /// Apply the rules of the Game of Life based on the retrieved number of neighbours.
+        /// </summary>
+        /// <param name="n">The number of neighbours.</param>
+        /// <param name="currentState">The current state of the cell.</param>
+        /// <returns>The new state of the cell, alive or otherwise.</returns>
         public bool GetCellState(int n, bool currentState)
         {
             bool state = currentState;

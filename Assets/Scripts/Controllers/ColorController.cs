@@ -13,82 +13,159 @@ namespace LifeController
     {
         [Header("Fired Events")]
         /// <summary>
-        /// An event to be fired whenever there is a change in the color settings.
+        /// An event to be fired whenever there is a change in the color settings for alive cells.
         /// </summary>
-        [SerializeField] private Vector3Action changeColor = null;
+        [SerializeField] private Vector3Action changeColorAlive = null;
+
+        /// <summary>
+        /// An event to be fired whenever there is a change in the color settings for dead cells.
+        /// </summary>
+        [SerializeField] private Vector3Action changeColorDead = null;
 
         [Header("Received Events")]
         /// <summary>
-        /// An event to be received for changes related to red.
+        /// An event to be received for changes related to red for alive cells.
         /// </summary>
-        [SerializeField] private NumericAction changeRed = null;
+        [SerializeField] private NumericAction changeRedAlive = null;
 
         /// <summary>
-        /// An event to be received for changes related to green.
+        /// An event to be received for changes related to green for alive cells.
         /// </summary>
-        [SerializeField] private NumericAction changeGreen = null;
+        [SerializeField] private NumericAction changeGreenAlive = null;
 
         /// <summary>
-        /// An event to be received for changes related to blue.
+        /// An event to be received for changes related to blue for alive cells.
         /// </summary>
-        [SerializeField] private NumericAction changeBlue = null;
+        [SerializeField] private NumericAction changeBlueAlive = null;
+
+        /// <summary>
+        /// An event to be received for changes related to red for dead cells.
+        /// </summary>
+        [SerializeField] private NumericAction changeRedDead = null;
+
+        /// <summary>
+        /// An event to be received for changes related to green for dead cells.
+        /// </summary>
+        [SerializeField] private NumericAction changeGreenDead = null;
+
+        /// <summary>
+        /// An event to be received for changes related to blue for dead cells.
+        /// </summary>
+        [SerializeField] private NumericAction changeBlueDead = null;
 
         [Header("Data")]
-        [SerializeField] private Vector3Data colorData = null;
+        /// <summary>
+        /// Data container for the color of the alive cells.
+        /// </summary>
+        [SerializeField] private Vector3Data colorDataAlive = null;
 
+        /// <summary>
+        /// Data container for the color of the dead cells.
+        /// </summary>
+        [SerializeField] private Vector3Data colorDataDead = null;
+
+        /// <summary>
+        /// Built-in function, used to register methods to events.
+        /// </summary>
         private void OnEnable()
         {
-            changeRed.listeners += OnChangeRed;
-            changeGreen.listeners += OnChangeGreen;
-            changeBlue.listeners += OnChangeBlue;
+            changeRedAlive.listeners += OnChangeRedAlive;
+            changeGreenAlive.listeners += OnChangeGreenAlive;
+            changeBlueAlive.listeners += OnChangeBlueAlive;
+            changeRedDead.listeners += OnChangeRedDead;
+            changeGreenDead.listeners += OnChangeGreenDead;
+            changeBlueDead.listeners += OnChangeBlueDead;
         }
 
+        /// <summary>
+        /// Built-in function, used to unregister methods to events.
+        /// </summary>
         private void OnDisable()
         {
-            changeRed.listeners -= OnChangeRed;
-            changeGreen.listeners -= OnChangeGreen;
-            changeBlue.listeners -= OnChangeBlue;
+            changeRedAlive.listeners -= OnChangeRedAlive;
+            changeGreenAlive.listeners -= OnChangeGreenAlive;
+            changeBlueAlive.listeners -= OnChangeBlueAlive;
+            changeRedDead.listeners -= OnChangeRedDead;
+            changeGreenDead.listeners -= OnChangeGreenDead;
+            changeBlueDead.listeners -= OnChangeBlueDead;
         }
 
         private void Start()
         {
             // Fire these events for whoever listens for the initial values.
-            changeRed?.Raise(colorData.value.x);
-            changeGreen?.Raise(colorData.value.y);
-            changeBlue?.Raise(colorData.value.z);
+            changeRedAlive?.Raise(colorDataAlive.value.x);
+            changeGreenAlive?.Raise(colorDataAlive.value.y);
+            changeBlueAlive?.Raise(colorDataAlive.value.z);
+
+            changeRedDead?.Raise(colorDataDead.value.x);
+            changeGreenDead?.Raise(colorDataDead.value.y);
+            changeBlueDead?.Raise(colorDataDead.value.z);
         }
 
         /// <summary>
         /// Method to be called on receive of red color change.
         /// </summary>
         /// <param name="f">The new value to be applied.</param>
-        private void OnChangeRed(float f)
+        private void OnChangeRedAlive(float f)
         {
             f = ValidateColorChange(f);
-            colorData.value.x = f;
-            changeColor?.Raise(colorData.value);
+            colorDataAlive.value.x = f;
+            changeColorAlive?.Raise(colorDataAlive.value);
         }
 
         /// <summary>
         /// Method to be called on receive of green color change.
         /// </summary>
         /// <param name="f">The new value to be applied.</param>
-        private void OnChangeGreen(float f)
+        private void OnChangeGreenAlive(float f)
         {
             f = ValidateColorChange(f);
-            colorData.value.y = f;
-            changeColor?.Raise(colorData.value);
+            colorDataAlive.value.y = f;
+            changeColorAlive?.Raise(colorDataAlive.value);
         }
 
         /// <summary>
         /// Method to be called on receive of blue color change.
         /// </summary>
         /// <param name="f">The new value to be applied.</param>
-        private void OnChangeBlue(float f)
+        private void OnChangeBlueAlive(float f)
         {
             f = ValidateColorChange(f);
-            colorData.value.z = f;
-            changeColor?.Raise(colorData.value);
+            colorDataAlive.value.z = f;
+            changeColorAlive?.Raise(colorDataAlive.value);
+        }
+
+        /// <summary>
+        /// Method to be called on receive of red color change.
+        /// </summary>
+        /// <param name="f">The new value to be applied.</param>
+        private void OnChangeRedDead(float f)
+        {
+            f = ValidateColorChange(f);
+            colorDataDead.value.x = f;
+            changeColorDead?.Raise(colorDataDead.value);
+        }
+
+        /// <summary>
+        /// Method to be called on receive of green color change.
+        /// </summary>
+        /// <param name="f">The new value to be applied.</param>
+        private void OnChangeGreenDead(float f)
+        {
+            f = ValidateColorChange(f);
+            colorDataDead.value.y = f;
+            changeColorDead?.Raise(colorDataDead.value);
+        }
+
+        /// <summary>
+        /// Method to be called on receive of blue color change.
+        /// </summary>
+        /// <param name="f">The new value to be applied.</param>
+        private void OnChangeBlueDead(float f)
+        {
+            f = ValidateColorChange(f);
+            colorDataDead.value.z = f;
+            changeColorDead?.Raise(colorDataDead.value);
         }
 
         /// <summary>

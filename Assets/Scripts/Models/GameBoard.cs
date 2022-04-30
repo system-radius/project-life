@@ -57,6 +57,9 @@ namespace LifeModel
             CreateBoard();
         }
 
+        /// <summary>
+        /// Create cell instances in the board.
+        /// </summary>
         private void CreateBoard()
         {
             for (int x = 0; x < Bounds.x; x++)
@@ -68,6 +71,7 @@ namespace LifeModel
                     obj.WorldPosition = GetWorldPosition(x, y);
                     board[x, y] = obj;
 
+                    // Optionally, an event may be raised on creation of a cell.
                     cellEvent?.Raise(obj.WorldPosition);
                 }
             }

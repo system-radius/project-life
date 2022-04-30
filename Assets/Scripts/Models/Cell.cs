@@ -15,18 +15,13 @@ namespace LifeModel
         public Vector2Int BoardPosition { get; set; }
 
         /// <summary>
-        /// Represents the world position.
+        /// Represents the position of this cell with regards to the world.
         /// </summary>
         public Vector3 WorldPosition { get; set; }
 
+        /// <summary>
+        /// The value of this cell.
+        /// </summary>
         public abstract T Value { get; set; }
-
-        /*
-        public Cell(Vector2Int boardPosition, Vector3 worldPosition)
-        {
-            BoardPosition = boardPosition;
-            WorldPosition = worldPosition;
-        }
-        /**/
     }
 }
