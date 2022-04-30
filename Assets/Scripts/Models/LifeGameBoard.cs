@@ -84,20 +84,6 @@ namespace LifeModel
         }
 
         /// <summary>
-        /// A method that can force events on set value.
-        /// </summary>
-        public void SetCellSelfValue()
-        {
-            for (int x = 0; x < Bounds.x; x++)
-            {
-                for (int y = 0; y < Bounds.y; y++)
-                {
-                    SetValue(x, y, GetValue(x, y));
-                }
-            }
-        }
-
-        /// <summary>
         /// Updates the entire board to move on to the next generation.
         /// </summary>
         /// /// <param name="enableTorus">Whether the board can do a wrap around search for neighbours or otherwise.</param>

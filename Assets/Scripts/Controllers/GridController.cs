@@ -74,18 +74,6 @@ namespace LifeController
         /// </summary>
         [SerializeField] private BooleanAction enableTorusEvent = null;
 
-        /// <summary>
-        /// An event that may be received when there is a color change.
-        /// Forces the cells to "reset" their values.
-        /// </summary>
-        [SerializeField] private Vector3Action forceResetAliveEvent = null;
-
-        /// <summary>
-        /// An event that may be received when there is a color change.
-        /// Forces the cells to "reset" their values.
-        /// </summary>
-        [SerializeField] private Vector3Action forceResetDeadEvent = null;
-
         [Header("Data")]
         /// <summary>
         /// The size of the grid to be created.
@@ -131,9 +119,6 @@ namespace LifeController
             randomizeSimulationEvent.listeners += RandomizeSimulation;
             pauseSimulationEvent.listeners += PauseSimulation;
             enableTorusEvent.listeners += EnableTorus;
-
-            forceResetAliveEvent.listeners += ForceResetValue;
-            forceResetDeadEvent.listeners += ForceResetValue;
         }
 
         /// <summary>
@@ -148,14 +133,11 @@ namespace LifeController
             randomizeSimulationEvent.listeners -= RandomizeSimulation;
             pauseSimulationEvent.listeners -= PauseSimulation;
             enableTorusEvent.listeners -= EnableTorus;
-
-            forceResetAliveEvent.listeners -= ForceResetValue;
-            forceResetDeadEvent.listeners -= ForceResetValue;
         }
 
         private void Start()
         {
-            RandomizeSimulation();
+            //Restart();
             setSimulationSpeedEvent?.Raise(updateTime.value);
             enableTorusEvent?.Raise(boardWrap.value);
         }
@@ -206,6 +188,10 @@ namespace LifeController
         private void PauseSimulation()
         {
             playingSimulation.value = !playingSimulation.value;
+            if (playingSimulation.value && grid == null)
+            {
+                RandomizeSimulation();
+            }
         }
 
         /// <summary>
@@ -226,7 +212,7 @@ namespace LifeController
         {
             while (true)
             {
-                if (playingSimulation.value)
+                if (playingSimulation.value && grid != null)
                 {
                     grid.UpdateGeneration(boardWrap.value);
 
@@ -258,7 +244,7 @@ namespace LifeController
         {
             bool value = vector.z == 1;
             vector.z = 0;
-            grid.SetValue(vector, value);
+            if (grid != null) grid.SetValue(vector, value);
         }
 
         /// <summary>
@@ -272,16 +258,6 @@ namespace LifeController
 
             // Start the coroutine.
             activeCoroutine = StartCoroutine(CheckGeneration());
-        }
-
-        /// <summary>
-        /// Allows for forcibly reseting the values on the cells,
-        /// so that set cell event may be triggered.
-        /// </summary>
-        /// <param name="vector">An unused parameter.</param>
-        private void ForceResetValue(Vector3 vector)
-        {
-            if (grid != null) grid.SetCellSelfValue();
         }
     }
 }

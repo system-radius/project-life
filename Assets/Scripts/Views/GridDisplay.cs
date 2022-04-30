@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
+using Unity.Collections;
 using EventMessages;
 
 namespace LifeView
@@ -31,6 +33,16 @@ namespace LifeView
         [SerializeField] private Vector3Action setColorDataDead;
 
         /// <summary>
+        /// An event to be received when applying the new size settings to the board.
+        /// </summary>
+        [SerializeField] private ActionEvent restartBoardEvent = null;
+
+        /// <summary>
+        /// An event to be received when applying randomization to the board.
+        /// </summary>
+        [SerializeField] private ActionEvent randomizeSimulationEvent = null;
+
+        /// <summary>
         /// The current set color for the alive cells.
         /// </summary>
         private Color aliveColor;
@@ -40,6 +52,12 @@ namespace LifeView
         /// </summary>
         private Color deadColor;
 
+        private Dictionary<Vector2, SpriteRenderer> activeCells;
+
+        private Dictionary<Vector2, SpriteRenderer> inactiveCells;
+
+        private List<SpriteRenderer> allCells;
+
         /// <summary>
         /// Built-in function, used to register methods to events.
         /// </summary>
@@ -48,6 +66,12 @@ namespace LifeView
             cellEvent.listeners += ReceiveCellEvent;
             setColorDataAlive.listeners += SetAliveColor;
             setColorDataDead.listeners += SetDeadColor;
+            restartBoardEvent.listeners += Restart;
+            randomizeSimulationEvent.listeners += Restart;
+
+            activeCells = new Dictionary<Vector2, SpriteRenderer>();
+            inactiveCells = new Dictionary<Vector2, SpriteRenderer>();
+            allCells = new List<SpriteRenderer>();
         }
 
         /// <summary>
@@ -58,6 +82,19 @@ namespace LifeView
             cellEvent.listeners -= ReceiveCellEvent;
             setColorDataAlive.listeners -= SetAliveColor;
             setColorDataDead.listeners -= SetDeadColor;
+            restartBoardEvent.listeners -= Restart;
+            randomizeSimulationEvent.listeners -= Restart;
+        }
+
+        private void Restart()
+        {
+            foreach (SpriteRenderer cell in allCells)
+            {
+                cell.color = new Color(0, 0, 0, 0);
+            }
+
+            activeCells.Clear();
+            inactiveCells.Clear();
         }
 
         /// <summary>
@@ -70,17 +107,32 @@ namespace LifeView
         {
             // Check for a collider on the provided position.
             Collider2D collider = Physics2D.OverlapCircle(vector, 0.5f);
+            SpriteRenderer cell;
             if (collider == null)
             {
                 // If there is no collider, then the event is meant to tell this display
                 // that it needs to create a cell display instance on the given position.
-                Instantiate(cellPrefab, vector, Quaternion.identity, transform);
+               cell = Instantiate(cellPrefab, vector, Quaternion.identity, transform).GetComponent<SpriteRenderer>();
+                allCells.Add(cell);
+            } else {
+                cell = collider.GetComponent<SpriteRenderer>();
+            }
+
+            // If there is already a collider, the color based on its state will just
+            // be checked and set (the z-coordinate of the vector represents the state).
+            if (vector.z == 0)
+            {
+                // The cell is set to be dead.
+                if (!inactiveCells.ContainsKey(vector)) inactiveCells.Add(vector, cell);
+                activeCells.Remove(vector);
+                cell.color = deadColor;
             }
             else
             {
-                // If there is already a collider, the color based on its state will just
-                // be checked and set (the z-coordinate of the vector represents the state).
-                collider.gameObject.GetComponent<SpriteRenderer>().color = vector.z == 0 ? deadColor : aliveColor;
+                // The cell is set to be alive.
+                if (!activeCells.ContainsKey(vector)) activeCells.Add(vector, cell);
+                inactiveCells.Remove(vector);
+                cell.color = aliveColor;
             }
         }
 
@@ -91,6 +143,10 @@ namespace LifeView
         private void SetAliveColor(Vector3 vector)
         {
             aliveColor = new Color(vector.x, vector.y, vector.z);
+            foreach (Vector2 key in activeCells.Keys)
+            {
+                activeCells[key].color = aliveColor;
+            }
         }
 
         /// <summary>
@@ -100,6 +156,10 @@ namespace LifeView
         private void SetDeadColor(Vector3 vector)
         {
             deadColor = new Color(vector.x, vector.y, vector.z);
+            foreach (Vector2 key in inactiveCells.Keys)
+            {
+                inactiveCells[key].color = aliveColor;
+            }
         }
     }
 }

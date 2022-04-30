@@ -664,6 +664,9 @@ MonoBehaviour:
   cellEvent: {fileID: 11400000, guid: 7ba374d692fae114e847ba55577b5b14, type: 2}
   setColorDataAlive: {fileID: 11400000, guid: 33641878814e1b24e97338d194d2307f, type: 2}
   setColorDataDead: {fileID: 11400000, guid: d210b3ef774d4204994595ea49f4360b, type: 2}
+  restartBoardEvent: {fileID: 11400000, guid: 40dc7672e01ff9949bff63c2e9ef4776, type: 2}
+  randomizeSimulationEvent: {fileID: 11400000, guid: 6f953b843faf85641818b89eb57925cd,
+    type: 2}
 --- !u!4 &105206190
 Transform:
   m_ObjectHideFlags: 0
@@ -5786,10 +5789,6 @@ MonoBehaviour:
   pauseSimulationEvent: {fileID: 11400000, guid: f4f5bec718ee51248a7bdf6915be7f95,
     type: 2}
   enableTorusEvent: {fileID: 11400000, guid: 3fef2545f4229814eb33194e28354594, type: 2}
-  forceResetAliveEvent: {fileID: 11400000, guid: 33641878814e1b24e97338d194d2307f,
-    type: 2}
-  forceResetDeadEvent: {fileID: 11400000, guid: d210b3ef774d4204994595ea49f4360b,
-    type: 2}
   sizeData: {fileID: 11400000, guid: 4eeb61836c32c3d4f8e6ed1f02ff900b, type: 2}
   updateTime: {fileID: 11400000, guid: 0044a7ce5e5e05a4597f1ffa1aaaf4fa, type: 2}
   playingSimulation: {fileID: 11400000, guid: cc15d82bcd5090245b08852b0af4ab3b, type: 2}
