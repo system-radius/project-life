@@ -258,7 +258,7 @@ namespace LifeController
         {
             bool value = vector.z == 1;
             vector.z = 0;
-            grid.SetValue(vector, value);
+            grid.SetCellState(vector, value);
         }
 
         /// <summary>

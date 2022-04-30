@@ -7,7 +7,7 @@ namespace LifeModel
     /// Requires all implementing cells to have position,
     /// both world and board-relative.
     /// </summary>
-    public interface ICell<T>
+    public interface ICell
     {
         /// <summary>
         /// Represents the position on the board.
@@ -18,10 +18,5 @@ namespace LifeModel
         /// Represents the position of this cell with regards to the world.
         /// </summary>
         Vector3 WorldPosition { get; set; }
-
-        /// <summary>
-        /// The value of this cell.
-        /// </summary>
-        T Value { get; set; }
     }
 }

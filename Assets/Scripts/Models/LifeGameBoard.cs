@@ -1,4 +1,5 @@
-﻿using EventMessages;
+﻿using System.Collections.Generic;
+using EventMessages;
 using UnityEngine;
 
 namespace LifeModel
@@ -7,7 +8,7 @@ namespace LifeModel
     /// A subclass of the game board. Implements additional methods
     /// necessary for the generation updates for the game of life.
     /// </summary>
-    public class LifeGameBoard : GameBoard<LifeCell, bool>
+    public class LifeGameBoard : GameBoard<LifeCell>
     {
 
         /// <summary>
@@ -19,7 +20,7 @@ namespace LifeModel
         /// A container for the current state of the board so that generation updates
         /// can be done without destroying data.
         /// </summary>
-        private bool[,] container;
+        private LifeCell[,] container;
 
         /// <summary>
         /// The number of the cells that are currently alive.
@@ -31,12 +32,16 @@ namespace LifeModel
         /// </summary>
         public int Generations { get; private set; }
 
+        private List<LifeCell> inactiveCells;
+
         public LifeGameBoard(ParameterizedAction<Vector3> cellEvent, Vector2Int bounds, bool randomize = false, Vector3 origin = default, float cellSize = 1) : base(bounds, origin, cellSize)
         {
             AliveCells = 0;
             Generations = 1;
-            container = new bool[Bounds.x, Bounds.y];
+            container = new LifeCell[Bounds.x, Bounds.y];
             internalCellEvent = cellEvent;
+
+            inactiveCells = new List<LifeCell>();
 
             CreateBoard(randomize);
         }
@@ -51,36 +56,87 @@ namespace LifeModel
             {
                 for (int y = 0; y < Bounds.y; y++)
                 {
-                    LifeCell obj = new LifeCell();
-                    obj.BoardPosition = new Vector2Int(x, y);
-                    obj.WorldPosition = GetWorldPosition(x, y);
-                    board[x, y] = obj;
-
                     bool state = randomize ? Random.Range(0, 2) % 2 == 0 : false;
-                    SetValue(x, y, state);
+                    SetCellState(x, y, state);
 
-                    AliveCells += state ? 1 : 0;
                 }
             }
         }
 
         /// <summary>
-        /// Overrides the SetValue from the game board. This override allows for
-        /// an event to be raised. Said event does not particularly care who or
-        /// what receives it.
+        /// A function that allows for switching the value of a cell.
+        /// Switching the value means creating a cell instance or removing it.
+        /// 
+        /// If the new state is true and there is no cell on the position,
+        /// a new instance will be created (or retrieved from the list of 
+        /// inactive cells.
+        /// 
+        /// If the new state is false and there is a cell on the position,
+        /// it is removed and added to the list of inactive cells.
+        /// 
+        /// All other instances, the state is preserved.
         /// </summary>
         /// <param name="x">The X-coordinate.</param>
         /// <param name="y">The Y-coordinate.</param>
-        /// <param name="value">The value to be set.</param>
-        public override void SetValue(int x, int y, bool value)
+        /// <param name="newState">The new state for the cell.</param>
+        public void SetCellState(int x, int y, bool newState)
         {
-            base.SetValue(x, y, value);
             if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return;
 
-            LifeCell cell = board[x, y];
-            cell.WorldPosition = new Vector3(cell.WorldPosition.x, cell.WorldPosition.y, cell.Value ? 1 : 0);
+            LifeCell cell = GetValue(x, y);
+            Vector3 worldPosition = GetWorldPosition(x, y);
 
-            internalCellEvent?.Raise(cell.WorldPosition);
+            // The first case where the state is set to true, and there is no active cell.
+            if (newState && cell == null)
+            {
+                // If there are still inactive cells, simply retrieve one of those.
+                if (inactiveCells.Count > 0)
+                {
+                    cell = inactiveCells[0];
+                    inactiveCells.RemoveAt(0);
+                }
+                // Otherwise, create a new instance.
+                else
+                {
+                    cell = new LifeCell();
+                }
+
+                // Finally, set the position details of the cell.
+                cell.BoardPosition = new Vector2Int(x, y);
+                cell.WorldPosition = worldPosition;
+                worldPosition.z = 1;
+            }
+
+            // The second case where the state is set to false, and there is an active cell.
+            else if (!newState && cell != null)
+            {
+                inactiveCells.Add(cell);
+                cell = null;
+                worldPosition.z = 0;
+            }
+
+            // All other cases not handled above. Simply preserve the current state.
+            else
+            {
+                worldPosition.z = cell != null ? 1 : 0;
+            }
+
+            // Raise an event that is related on the cell's world position.
+            internalCellEvent?.Raise(worldPosition);
+
+            // Set the value to the board.
+            SetValue(x, y, cell);
+        }
+
+        /// <summary>
+        /// A wrapper for the SetCellState function so it may receive the world position directly.
+        /// </summary>
+        /// <param name="worldPosition">The vector 3 to be converted to board position.</param>
+        /// <param name="newState">The new state to be set.</param>
+        public void SetCellState(Vector3 worldPosition, bool newState)
+        {
+            Vector2Int position = GetBoardPosition(worldPosition);
+            SetCellState(position.x, position.y, newState);
         }
 
         /// <summary>
@@ -116,7 +172,7 @@ namespace LifeModel
         /// </summary>
         /// <param name="container">A 2D array that contains a snapshot of the grid values.</param>
         /// <param name="enableTorus">Whether the board can do a wrap around search for neighbours or otherwise.</param>
-        public void UpdateCellStates(bool[,] container, bool enableTorus = false)
+        public void UpdateCellStates(LifeCell[,] container, bool enableTorus = false)
         {
             AliveCells = 0;
             for (int x = 0; x < Bounds.x; x++)
@@ -125,9 +181,10 @@ namespace LifeModel
                 {
                     int n = CountNeighbours(container, x, y, enableTorus);
 
-                    bool state = GetCellState(n, GetValue(x, y));
+                    bool state = GetCellState(n, GetValue(x, y) != null);
                     AliveCells += state ? 1 : 0;
-                    SetValue(x, y, state);
+                    //SetValue(x, y, state);
+                    SetCellState(x, y, state);
                 }
             }
         }
@@ -141,7 +198,7 @@ namespace LifeModel
         /// <param name="positionY">The Y-coordinate of the cell to be checked.</param>
         /// <param name="enableTorus">Whether the board can do a wrap around search for neighbours or otherwise.</param>
         /// <returns>The total number of "alive" neighbours.</returns>
-        public int CountNeighbours(bool[,] container, int positionX, int positionY, bool enableTorus = false)
+        public int CountNeighbours(LifeCell[,] container, int positionX, int positionY, bool enableTorus = false)
         {
             int neighbours = 0;
             for (int x = -1; x <= 1; x++)
@@ -157,7 +214,7 @@ namespace LifeModel
                     if (neighbourY < 0 || neighbourY >= Bounds.y)
                         continue; // Skip invalid indices.
                     if (x == 0 && y == 0) continue; // Skip self.
-                    neighbours += container[neighbourX, neighbourY] ? 1 : 0;
+                    neighbours += container[neighbourX, neighbourY] != null ? 1 : 0;
                 }
             }
 

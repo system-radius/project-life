@@ -13,14 +13,9 @@ namespace LifeModel
     /// Also able to check on the neighbors and determine
     /// whether it should live or die.
     /// </summary>
-    public class LifeCell : ICell<bool>
+    public class LifeCell : ICell
     {
         public Vector2Int BoardPosition { get; set; }
         public Vector3 WorldPosition { get; set; }
-
-        /// <summary>
-        /// The state of this cell, represented by a boolean value.
-        /// </summary>
-        public bool Value { get; set; }
     }
 }

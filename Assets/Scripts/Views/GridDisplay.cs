@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using EventMessages;
 
 namespace LifeView
@@ -33,12 +34,16 @@ namespace LifeView
         /// <summary>
         /// The current set color for the alive cells.
         /// </summary>
-        private Color aliveColor;
+        private Color aliveColor = Color.white;
 
         /// <summary>
         /// The current set color for the alive cells.
         /// </summary>
         private Color deadColor;
+
+        private List<SpriteRenderer> activeCells;
+
+        private List<SpriteRenderer> inactiveCells;
 
         /// <summary>
         /// Built-in function, used to register methods to events.
@@ -60,27 +65,53 @@ namespace LifeView
             setColorDataDead.listeners -= SetDeadColor;
         }
 
+        private void Awake()
+        {
+            activeCells = new List<SpriteRenderer>();
+            inactiveCells = new List<SpriteRenderer>();
+        }
+
         /// <summary>
         /// The registered method called whenever this class receives a cell event.
         /// It will attempt to do one of two things on the position that is given
-        /// based on the existence of an object on the said position.
+        /// based on the z-coordinate of the given vector.
         /// </summary>
         /// <param name="vector">The position that needs to be checked.</param>
         private void ReceiveCellEvent(Vector3 vector)
         {
             // Check for a collider on the provided position.
             Collider2D collider = Physics2D.OverlapCircle(vector, 0.5f);
-            if (collider == null)
+            SpriteRenderer cell;
+            bool state = vector.z == 1;
+            vector.z = 0;
+            if (state && collider == null)
             {
-                // If there is no collider, then the event is meant to tell this display
-                // that it needs to create a cell display instance on the given position.
-                Instantiate(cellPrefab, vector, Quaternion.identity, transform);
+                if (inactiveCells.Count > 0)
+                {
+                    cell = inactiveCells[0];
+                    inactiveCells.RemoveAt(0);
+                }
+                else
+                {
+                    // If there is no collider, then the event is meant to tell this display
+                    // that it needs to create a cell display instance on the given position.
+                    cell = Instantiate(cellPrefab, vector, Quaternion.identity, transform).GetComponent<SpriteRenderer>();
+                }
+
+                activeCells.Add(cell);
+                cell.color = aliveColor;
+                cell.transform.position = vector;
             }
-            else
+            else if (!state && collider != null)
             {
                 // If there is already a collider, the color based on its state will just
                 // be checked and set (the z-coordinate of the vector represents the state).
-                collider.gameObject.GetComponent<SpriteRenderer>().color = vector.z == 0 ? deadColor : aliveColor;
+                //collider.gameObject.GetComponent<SpriteRenderer>().color = vector.z == 0 ? deadColor : aliveColor;
+
+                cell = collider.GetComponent<SpriteRenderer>();
+                cell.transform.position = new Vector3(-1, -1, -1);
+                activeCells.Remove(cell);
+                inactiveCells.Add(cell);
             }
         }
 

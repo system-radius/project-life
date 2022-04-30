@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ae88ad8968273d348af747727c2e215a, type: 3}
   m_Name: BoardSize
   m_EditorClassIdentifier: 
-  value: {x: 100, y: 50}
+  value: {x: 20, y: 20}

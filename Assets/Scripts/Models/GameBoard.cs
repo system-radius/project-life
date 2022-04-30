@@ -6,8 +6,7 @@ namespace LifeModel
     /// A representation of the board that contains the cells. Currently designed for 2D.
     /// </summary>
     /// <typeparam name="T">The type to be held by the board.</typeparam>
-    /// <typeparam name="CellType">The cell type.</typeparam>
-    public abstract class GameBoard<T, CellType> where T : ICell<CellType>
+    public abstract class GameBoard<T> where T : ICell
     {
 
         /// <summary>
@@ -60,12 +59,11 @@ namespace LifeModel
         /// <param name="x">X-coordinate.</param>
         /// <param name="y">Y-coordinate.</param>
         /// <param name="value">The value to be set.</param>
-        public virtual void SetValue(int x, int y, CellType value)
+        public virtual void SetValue(int x, int y, T value)
         {
             if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return;
 
-            T cell = board[x, y];
-            cell.Value = value;
+            board[x, y] = value;
         }
 
         /// <summary>
@@ -74,7 +72,7 @@ namespace LifeModel
         /// </summary>
         /// <param name="worldPosition">A vector 3 noting the world position.</param>
         /// <param name="value">The value to be set.</param>
-        public void SetValue(Vector3 worldPosition, CellType value)
+        public void SetValue(Vector3 worldPosition, T value)
         {
             Vector2Int boardPosition = GetBoardPosition(worldPosition);
             SetValue(boardPosition.x, boardPosition.y, value);
@@ -87,11 +85,11 @@ namespace LifeModel
         /// <param name="x">X-coordinate.</param>
         /// <param name="y">Y-coordinate.</param>
         /// <returns>Returns the value found on board[x][y], or the default if the coordinates are invalid.</returns>
-        public virtual CellType GetValue(int x, int y)
+        public virtual T GetValue(int x, int y)
         {
-            if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return default(CellType);
+            if (x < 0 || x >= Bounds.x || y < 0 || y >= Bounds.y) return default(T);
 
-            return board[x, y].Value;
+            return board[x, y];
         }
 
         /// <summary>
@@ -100,7 +98,7 @@ namespace LifeModel
         /// </summary>
         /// <param name="worldPosition">A vector 3 noting the world position.</param>
         /// <returns>The value on the cell referred by the world position, or the default if the coordinates are invalid.</returns>
-        public CellType GetValue(Vector3 worldPosition)
+        public T GetValue(Vector3 worldPosition)
         {
             Vector2Int coord = GetBoardPosition(worldPosition);
             return GetValue(coord.x, coord.y);
@@ -136,7 +134,7 @@ namespace LifeModel
         /// into another container.
         /// </summary>
         /// <param name="container">Another 2D array that will contain the current grid values.</param>
-        public void RetrieveCurrentGridValues(CellType[,] container)
+        public void RetrieveCurrentGridValues(T[,] container)
         {
             for (int x = 0; x < Bounds.x; x++)
             {
